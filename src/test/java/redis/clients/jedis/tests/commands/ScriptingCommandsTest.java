@@ -1,27 +1,22 @@
 package redis.clients.jedis.tests.commands;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Test;
-
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisNoScriptException;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.tests.utils.ClientKillerUtil;
 import redis.clients.jedis.util.SafeEncoder;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.*;
 
 public class ScriptingCommandsTest extends JedisCommandTestBase {
 
@@ -61,7 +56,7 @@ public class ScriptingCommandsTest extends JedisCommandTestBase {
     args.add("second".getBytes());
     args.add("third".getBytes());
 
-    BinaryJedis binaryJedis = new BinaryJedis(hnp.getHost(), hnp.getPort(), 500);
+    BinaryJedis binaryJedis = new BinaryJedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     binaryJedis.connect();
     binaryJedis.auth("foobared");
 
@@ -220,7 +215,7 @@ public class ScriptingCommandsTest extends JedisCommandTestBase {
 
   @Test
   public void scriptExistsWithBrokenConnection() {
-    Jedis deadClient = new Jedis(jedis.getClient().getHost(), jedis.getClient().getPort());
+    Jedis deadClient = new Jedis(jedis.getClient().getClientOptions());
     deadClient.auth("foobared");
 
     deadClient.clientSetname("DEAD");

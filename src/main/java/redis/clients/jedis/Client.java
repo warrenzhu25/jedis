@@ -1,6 +1,12 @@
 package redis.clients.jedis;
 
-import static redis.clients.jedis.Protocol.toByteArray;
+import redis.clients.jedis.commands.Commands;
+import redis.clients.jedis.options.ClientOptions;
+import redis.clients.jedis.params.GeoRadiusParam;
+import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.params.ZAddParams;
+import redis.clients.jedis.params.ZIncrByParams;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,39 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSocketFactory;
-
-import redis.clients.jedis.commands.Commands;
-import redis.clients.jedis.params.GeoRadiusParam;
-import redis.clients.jedis.params.SetParams;
-import redis.clients.jedis.params.ZAddParams;
-import redis.clients.jedis.params.ZIncrByParams;
-import redis.clients.jedis.util.SafeEncoder;
+import static redis.clients.jedis.Protocol.toByteArray;
 
 public class Client extends BinaryClient implements Commands {
 
-  public Client() {
-    super();
-  }
-
-  public Client(final String host) {
-    super(host);
-  }
-
-  public Client(final String host, final int port) {
-    super(host, port);
-  }
-
-  public Client(final String host, final int port, final boolean ssl) {
-    super(host, port, ssl);
-  }
-
-  public Client(final String host, final int port, final boolean ssl,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
-    super(host, port, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
+  public Client(ClientOptions clientOptions) {
+    super(clientOptions);
   }
 
   @Override

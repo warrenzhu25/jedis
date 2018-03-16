@@ -1,11 +1,14 @@
 package redis.clients.jedis.tests.commands;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Protocol.Keyword;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.options.ClientOptions;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -14,15 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.Protocol.Keyword;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.exceptions.JedisDataException;
+import static org.junit.Assert.*;
 
 public class TransactionCommandsTest extends JedisCommandTestBase {
   final byte[] bfoo = { 0x01, 0x02, 0x03, 0x04 };
@@ -38,7 +33,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
   public void setUp() throws Exception {
     super.setUp();
 
-    nj = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    nj = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     nj.connect();
     nj.auth("foobared");
     nj.flushAll();
@@ -89,7 +84,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
 
     t.set("mykey", "foo");
     List<Object> resp = t.exec();
-    assertNull(resp);
+    assertEquals(null, resp);
     assertEquals("bar", jedis.get("mykey"));
 
     // Binary
@@ -103,7 +98,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
 
     t.set(bmykey, bfoo);
     resp = t.exec();
-    assertNull(resp);
+    assertEquals(null, resp);
     assertTrue(Arrays.equals(bbar, jedis.get(bmykey)));
   }
 
@@ -274,7 +269,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
     t.set("foooo", "barrr");
 
     jedis.resetState();
-    assertNull(jedis.get("foooo"));
+    assertEquals(null, jedis.get("foooo"));
   }
 
   @Test
@@ -286,7 +281,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
     p.set("foooo", "barrr");
 
     jedis.resetState();
-    assertNull(jedis.get("foooo"));
+    assertEquals(null, jedis.get("foooo"));
   }
 
   @Test
@@ -312,7 +307,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
 
   @Test
   public void testResetStateWithFullyExecutedTransaction() {
-    Jedis jedis2 = new Jedis(jedis.getClient().getHost(), jedis.getClient().getPort());
+    Jedis jedis2 = new Jedis(jedis.getClient().getClientOptions());
     jedis2.auth("foobared");
 
     Transaction t = jedis2.multi();
@@ -330,7 +325,7 @@ public class TransactionCommandsTest extends JedisCommandTestBase {
   @Test
   public void testCloseable() throws IOException {
     // we need to test with fresh instance of Jedis
-    Jedis jedis2 = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    Jedis jedis2 = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     jedis2.auth("foobared");
 
     Transaction transaction = jedis2.multi();

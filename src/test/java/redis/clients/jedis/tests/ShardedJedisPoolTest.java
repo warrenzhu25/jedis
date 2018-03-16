@@ -1,26 +1,17 @@
 package redis.clients.jedis.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.junit.Before;
+import org.junit.Test;
+import redis.clients.jedis.*;
+import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
+import redis.clients.jedis.options.ClientOptions;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.junit.Before;
-import org.junit.Test;
-
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisShardInfo;
-import redis.clients.jedis.ShardedJedis;
-import redis.clients.jedis.ShardedJedisPipeline;
-import redis.clients.jedis.ShardedJedisPool;
-import redis.clients.jedis.exceptions.JedisException;
-import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
+import static org.junit.Assert.*;
 
 public class ShardedJedisPoolTest {
   private static HostAndPort redis1 = HostAndPortUtil.getRedisServers().get(0);
@@ -31,15 +22,15 @@ public class ShardedJedisPoolTest {
   @Before
   public void startUp() {
     shards = new ArrayList<JedisShardInfo>();
-    shards.add(new JedisShardInfo(redis1));
-    shards.add(new JedisShardInfo(redis2));
-    shards.get(0).setPassword("foobared");
-    shards.get(1).setPassword("foobared");
-    Jedis j = new Jedis(shards.get(0));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withHostAndPort(redis1).withPassword("foobared").build()));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withHostAndPort(redis2).withPassword("foobared").build()));
+    //shards.get(0).setPassword("foobared");
+    //shards.get(1).setPassword("foobared");
+    Jedis j = new Jedis(shards.get(0).getClientOptions());
     j.connect();
     j.flushAll();
     j.disconnect();
-    j = new Jedis(shards.get(1));
+    j = new Jedis(shards.get(1).getClientOptions());
     j.connect();
     j.flushAll();
     j.disconnect();
@@ -152,11 +143,11 @@ public class ShardedJedisPoolTest {
     }
     jedis.close();
     // check quantity for each shard
-    Jedis j = new Jedis(shards.get(0));
+    Jedis j = new Jedis(shards.get(0).getClientOptions());
     j.connect();
     Long c1 = j.dbSize();
     j.disconnect();
-    j = new Jedis(shards.get(1));
+    j = new Jedis(shards.get(1).getClientOptions());
     j.connect();
     Long c2 = j.dbSize();
     j.disconnect();
@@ -164,7 +155,7 @@ public class ShardedJedisPoolTest {
     // items on one shard
     // alter shard 1 and recreate pool
     pool.destroy();
-    shards.set(1, new JedisShardInfo("localhost", 1234));
+    shards.set(1, new JedisShardInfo(ClientOptions.builder().withPort(1234).build()));
     pool = new ShardedJedisPool(redisConfig, shards);
     jedis = pool.getResource();
     Long actual = Long.valueOf(0);
@@ -185,17 +176,17 @@ public class ShardedJedisPoolTest {
 
   @Test
   public void startWithUrlString() {
-    Jedis j = new Jedis("localhost", 6380);
+    Jedis j = new Jedis(ClientOptions.builder().withPort(6380).build());
     j.auth("foobared");
     j.set("foo", "bar");
 
-    j = new Jedis("localhost", 6379);
+    j = new Jedis();
     j.auth("foobared");
     j.set("foo", "bar");
 
     List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
-    shards.add(new JedisShardInfo("redis://:foobared@localhost:6380"));
-    shards.add(new JedisShardInfo("redis://:foobared@localhost:6379"));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6380").build()));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6379").build()));
 
     GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
     ShardedJedisPool pool = new ShardedJedisPool(redisConfig, shards);
@@ -213,17 +204,17 @@ public class ShardedJedisPoolTest {
 
   @Test
   public void startWithUrl() throws URISyntaxException {
-    Jedis j = new Jedis("localhost", 6380);
+    Jedis j = new Jedis(ClientOptions.builder().withPort(6380).build());
     j.auth("foobared");
     j.set("foo", "bar");
 
-    j = new Jedis("localhost", 6379);
+    j = new Jedis();
     j.auth("foobared");
     j.set("foo", "bar");
 
-    List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6380")));
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6379")));
+    List<JedisShardInfo> shards = new ArrayList<>();
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6380").build()));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6379").build()));
 
     GenericObjectPoolConfig redisConfig = new GenericObjectPoolConfig();
     ShardedJedisPool pool = new ShardedJedisPool(redisConfig, shards);
@@ -246,8 +237,8 @@ public class ShardedJedisPoolTest {
     config.setBlockWhenExhausted(false);
 
     List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6380")));
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6379")));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6380").build()));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6379").build()));
 
     ShardedJedisPool pool = new ShardedJedisPool(config, shards);
 
@@ -279,8 +270,8 @@ public class ShardedJedisPoolTest {
     config.setBlockWhenExhausted(false);
 
     List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6380")));
-    shards.add(new JedisShardInfo(new URI("redis://:foobared@localhost:6379")));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6380").build()));
+    shards.add(new JedisShardInfo(ClientOptions.builder().withURI("redis://:foobared@localhost:6379").build()));
 
     ShardedJedisPool pool = new ShardedJedisPool(config, shards);
 

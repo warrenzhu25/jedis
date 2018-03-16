@@ -1,18 +1,14 @@
 package redis.clients.jedis;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.util.SafeEncoder;
+
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class JedisClusterInfoCache {
   private final Map<String, JedisPool> nodes = new HashMap<String, JedisPool>();
@@ -23,25 +19,17 @@ public class JedisClusterInfoCache {
   private final Lock w = rwl.writeLock();
   private volatile boolean rediscovering;
   private final GenericObjectPoolConfig poolConfig;
-
-  private int connectionTimeout;
-  private int soTimeout;
-  private String password;
-  private String clientName;
+  private final ClientOptions clientOptions;
 
   private static final int MASTER_NODE_INDEX = 2;
 
-  public JedisClusterInfoCache(final GenericObjectPoolConfig poolConfig, int timeout) {
-    this(poolConfig, timeout, timeout, null, null);
+  public JedisClusterInfoCache(GenericObjectPoolConfig poolConfig, ClientOptions clientOptions) {
+    this.poolConfig = poolConfig;
+    this.clientOptions = clientOptions;
   }
 
-  public JedisClusterInfoCache(final GenericObjectPoolConfig poolConfig,
-      final int connectionTimeout, final int soTimeout, final String password, final String clientName) {
-    this.poolConfig = poolConfig;
-    this.connectionTimeout = connectionTimeout;
-    this.soTimeout = soTimeout;
-    this.password = password;
-    this.clientName = clientName;
+  public ClientOptions getClientOptions() {
+    return clientOptions;
   }
 
   public void discoverClusterNodesAndSlots(Jedis jedis) {
@@ -154,8 +142,7 @@ public class JedisClusterInfoCache {
       JedisPool existingPool = nodes.get(nodeKey);
       if (existingPool != null) return existingPool;
 
-      JedisPool nodePool = new JedisPool(poolConfig, node.getHost(), node.getPort(),
-          connectionTimeout, soTimeout, password, 0, clientName, false, null, null, null);
+      JedisPool nodePool = new JedisPool(poolConfig, clientOptions);
       nodes.put(nodeKey, nodePool);
       return nodePool;
     } finally {
@@ -250,7 +237,7 @@ public class JedisClusterInfoCache {
   }
 
   public static String getNodeKey(Client client) {
-    return client.getHost() + ":" + client.getPort();
+    return client.getClientOptions().getHost() + ":" + client.getClientOptions().getPort();
   }
 
   public static String getNodeKey(Jedis jedis) {

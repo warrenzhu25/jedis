@@ -1,22 +1,22 @@
 package redis.clients.jedis.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.Before;
 import org.junit.Test;
-
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.tests.utils.JedisSentinelTestUtil;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JedisSentinelPoolTest {
   private static final String MASTER_NAME = "mymaster";
@@ -37,8 +37,8 @@ public class JedisSentinelPoolTest {
     sentinels.add(sentinel1.toString());
     sentinels.add(sentinel2.toString());
 
-    sentinelJedis1 = new Jedis(sentinel1);
-    sentinelJedis2 = new Jedis(sentinel2);
+    sentinelJedis1 = new Jedis(ClientOptions.builder().withHostAndPort(sentinel1).build());
+    sentinelJedis2 = new Jedis(ClientOptions.builder().withHostAndPort(sentinel2).build());
   }
 
   @Test(expected = JedisConnectionException.class)

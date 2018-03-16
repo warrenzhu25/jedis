@@ -1,28 +1,29 @@
 package redis.clients.jedis.tests.commands;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.exceptions.JedisClusterException;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.options.ClientOptions;
+import redis.clients.jedis.tests.HostAndPortUtil;
+import redis.clients.jedis.util.JedisClusterCRC16;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
-
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.exceptions.JedisClusterOperationException;
-import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.jedis.tests.HostAndPortUtil;
-import redis.clients.jedis.util.JedisClusterCRC16;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ClusterScriptingCommandsTest {
+  public static final String PASSWORD = "cluster";
   private Jedis node1;
   private static Jedis node2;
   private static Jedis node3;
@@ -35,16 +36,13 @@ public class ClusterScriptingCommandsTest {
 
   @Before
   public void setUp() throws InterruptedException {
-    node1 = new Jedis(nodeInfo1);
-    node1.auth("cluster");
+    node1 = new Jedis(ClientOptions.builder().withHostAndPort(nodeInfo1).withPassword(PASSWORD).build());
     node1.flushAll();
 
-    node2 = new Jedis(nodeInfo2);
-    node2.auth("cluster");
+    node2 = new Jedis(ClientOptions.builder().withHostAndPort(nodeInfo2).withPassword(PASSWORD).build());
     node2.flushAll();
 
-    node3 = new Jedis(nodeInfo3);
-    node3.auth("cluster");
+    node3 = new Jedis(ClientOptions.builder().withHostAndPort(nodeInfo3).withPassword(PASSWORD).build());
     node3.flushAll();
 
     // ---- configure cluster
@@ -75,7 +73,7 @@ public class ClusterScriptingCommandsTest {
     waitForClusterReady();
 
     jedisClusterNode.add(new HostAndPort("127.0.0.1", 7379));
-    jedisCluster = new JedisCluster(jedisClusterNode, 2000, 2000, 5, "cluster", new JedisPoolConfig());
+    jedisCluster = new JedisCluster(jedisClusterNode, ClientOptions.builder().withTimeout(2000).withPassword("cluster").build(), new JedisPoolConfig());
 
   }
 
@@ -102,7 +100,7 @@ public class ClusterScriptingCommandsTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test(expected = JedisClusterOperationException.class)
+  @Test(expected = JedisClusterException.class)
   public void testJedisClusterException() {
     String script = "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2],ARGV[3]}";
     List<String> keys = new ArrayList<String>();
@@ -141,7 +139,7 @@ public class ClusterScriptingCommandsTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test(expected = JedisClusterOperationException.class)
+  @Test(expected = JedisClusterException.class)
   public void testJedisClusterException2() {
     byte[] script = "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2],ARGV[3]}".getBytes();
     List<byte[]> keys = new ArrayList<byte[]>();

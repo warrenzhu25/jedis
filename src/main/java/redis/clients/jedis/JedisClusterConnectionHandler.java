@@ -1,25 +1,20 @@
 package redis.clients.jedis;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.options.ClientOptions;
+
 import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public abstract class JedisClusterConnectionHandler implements Closeable {
   protected final JedisClusterInfoCache cache;
 
   public JedisClusterConnectionHandler(Set<HostAndPort> nodes,
-                                       final GenericObjectPoolConfig poolConfig, int connectionTimeout, int soTimeout, String password) {
-    this(nodes, poolConfig, connectionTimeout, soTimeout, password, null);
-  }
-
-  public JedisClusterConnectionHandler(Set<HostAndPort> nodes,
-          final GenericObjectPoolConfig poolConfig, int connectionTimeout, int soTimeout, String password, String clientName) {
-    this.cache = new JedisClusterInfoCache(poolConfig, connectionTimeout, soTimeout, password, clientName);
-    initializeSlotsCache(nodes, poolConfig, connectionTimeout, soTimeout, password, clientName);
+          final GenericObjectPoolConfig poolConfig, ClientOptions clientOptions) {
+    this.cache = new JedisClusterInfoCache(poolConfig, clientOptions);
+    initializeSlotsCache(nodes);
 }
 
   abstract Jedis getConnection();
@@ -34,17 +29,16 @@ public abstract class JedisClusterConnectionHandler implements Closeable {
     return cache.getNodes();
   }
 
-  private void initializeSlotsCache(Set<HostAndPort> startNodes, GenericObjectPoolConfig poolConfig,
-                                    int connectionTimeout, int soTimeout, String password, String clientName) {
+  private void initializeSlotsCache(Set<HostAndPort> startNodes) {
     for (HostAndPort hostAndPort : startNodes) {
       Jedis jedis = null;
       try {
-        jedis = new Jedis(hostAndPort.getHost(), hostAndPort.getPort(), connectionTimeout, soTimeout);
-        if (password != null) {
-          jedis.auth(password);
+        jedis = new Jedis(ClientOptions.builder().withHostAndPort(hostAndPort).build());
+        if (cache.getClientOptions().getPassword() != null) {
+          jedis.auth(cache.getClientOptions().getPassword());
         }
-        if (clientName != null) {
-          jedis.clientSetname(clientName);
+        if (cache.getClientOptions().getClientName()!= null) {
+          jedis.clientSetname(cache.getClientOptions().getClientName());
         }
         cache.discoverClusterNodesAndSlots(jedis);
         break;

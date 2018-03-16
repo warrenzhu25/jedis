@@ -1,38 +1,20 @@
 package redis.clients.jedis.tests;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
-
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Tuple;
+import redis.clients.jedis.*;
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.util.SafeEncoder;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.*;
 
 public class PipeliningTest {
   private static HostAndPort hnp = HostAndPortUtil.getRedisServers().get(0);
@@ -41,7 +23,7 @@ public class PipeliningTest {
 
   @Before
   public void setUp() throws Exception {
-    jedis = new Jedis(hnp.getHost(), hnp.getPort(), 2000);
+    jedis = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(2000).build());
     jedis.connect();
     jedis.auth("foobared");
     jedis.flushAll();
@@ -583,14 +565,14 @@ public class PipeliningTest {
   @Test
   public void testSyncWithNoCommandQueued() {
     // we need to test with fresh instance of Jedis
-    Jedis jedis2 = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    Jedis jedis2 = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
 
     Pipeline pipeline = jedis2.pipelined();
     pipeline.sync();
 
     jedis2.close();
 
-    jedis2 = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    jedis2 = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
 
     pipeline = jedis2.pipelined();
     List<Object> resp = pipeline.syncAndReturnAll();
@@ -602,7 +584,7 @@ public class PipeliningTest {
   @Test
   public void testCloseable() throws IOException {
     // we need to test with fresh instance of Jedis
-    Jedis jedis2 = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    Jedis jedis2 = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     jedis2.auth("foobared");
 
     Pipeline pipeline = jedis2.pipelined();
@@ -619,7 +601,7 @@ public class PipeliningTest {
   @Test
   public void testCloseableWithMulti() throws IOException {
     // we need to test with fresh instance of Jedis
-    Jedis jedis2 = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    Jedis jedis2 = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     jedis2.auth("foobared");
 
     Pipeline pipeline = jedis2.pipelined();
