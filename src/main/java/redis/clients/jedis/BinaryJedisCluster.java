@@ -1,12 +1,15 @@
 package redis.clients.jedis;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.commands.BinaryJedisClusterCommands;
 import redis.clients.jedis.commands.JedisClusterBinaryScriptingCommands;
 import redis.clients.jedis.commands.MultiKeyBinaryJedisClusterCommands;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.params.GeoRadiusParam;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
+import redis.clients.jedis.util.JedisClusterHashTagUtil;
 import redis.clients.jedis.util.KeyMergeUtil;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -16,51 +19,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import redis.clients.jedis.util.JedisClusterHashTagUtil;
-
 public class BinaryJedisCluster implements BinaryJedisClusterCommands,
     MultiKeyBinaryJedisClusterCommands, JedisClusterBinaryScriptingCommands, Closeable {
 
   public static final int HASHSLOTS = 16384;
-  protected static final int DEFAULT_TIMEOUT = 2000;
   protected static final int DEFAULT_MAX_ATTEMPTS = 5;
 
   protected int maxAttempts;
 
   protected JedisClusterConnectionHandler connectionHandler;
 
-  public BinaryJedisCluster(Set<HostAndPort> nodes, int timeout) {
-    this(nodes, timeout, DEFAULT_MAX_ATTEMPTS, new GenericObjectPoolConfig());
+  public BinaryJedisCluster(Set<HostAndPort> nodes, ClientOptions clientOptions, GenericObjectPoolConfig poolConfig) {
+    this(nodes, clientOptions, poolConfig, DEFAULT_MAX_ATTEMPTS);
   }
 
-  public BinaryJedisCluster(Set<HostAndPort> nodes) {
-    this(nodes, DEFAULT_TIMEOUT);
-  }
-
-  public BinaryJedisCluster(Set<HostAndPort> jedisClusterNode, int timeout, int maxAttempts,
-      final GenericObjectPoolConfig poolConfig) {
-    this.connectionHandler = new JedisSlotBasedConnectionHandler(jedisClusterNode, poolConfig,
-        timeout);
-    this.maxAttempts = maxAttempts;
-  }
-
-  public BinaryJedisCluster(Set<HostAndPort> jedisClusterNode, int connectionTimeout,
-                            int soTimeout, int maxAttempts, final GenericObjectPoolConfig poolConfig) {
-    this.connectionHandler = new JedisSlotBasedConnectionHandler(jedisClusterNode, poolConfig,
-        connectionTimeout, soTimeout);
-    this.maxAttempts = maxAttempts;
-  }
-
-  public BinaryJedisCluster(Set<HostAndPort> jedisClusterNode, int connectionTimeout, int soTimeout, int maxAttempts, String password, GenericObjectPoolConfig poolConfig) {
-    this.connectionHandler = new JedisSlotBasedConnectionHandler(jedisClusterNode, poolConfig,
-            connectionTimeout, soTimeout, password);
-    this.maxAttempts = maxAttempts;
-  }
-
-  public BinaryJedisCluster(Set<HostAndPort> jedisClusterNode, int connectionTimeout, int soTimeout, int maxAttempts, String password, String clientName, GenericObjectPoolConfig poolConfig) {
-    this.connectionHandler = new JedisSlotBasedConnectionHandler(jedisClusterNode, poolConfig,
-            connectionTimeout, soTimeout, password, clientName);
+  public BinaryJedisCluster(Set<HostAndPort> nodes, ClientOptions clientOptions, GenericObjectPoolConfig poolConfig, int maxAttempts) {
+    this.connectionHandler = new JedisSlotBasedConnectionHandler(nodes, poolConfig, clientOptions);
     this.maxAttempts = maxAttempts;
   }
 

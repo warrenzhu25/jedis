@@ -1,31 +1,17 @@
 package redis.clients.jedis;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.exceptions.JedisNoReachableClusterNodeException;
+import redis.clients.jedis.options.ClientOptions;
+
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
-import redis.clients.jedis.exceptions.JedisException;
-import redis.clients.jedis.exceptions.JedisNoReachableClusterNodeException;
-
 public class JedisSlotBasedConnectionHandler extends JedisClusterConnectionHandler {
 
-  public JedisSlotBasedConnectionHandler(Set<HostAndPort> nodes,
-      final GenericObjectPoolConfig poolConfig, int timeout) {
-    this(nodes, poolConfig, timeout, timeout);
-  }
-
-  public JedisSlotBasedConnectionHandler(Set<HostAndPort> nodes,
-      final GenericObjectPoolConfig poolConfig, int connectionTimeout, int soTimeout) {
-    super(nodes, poolConfig, connectionTimeout, soTimeout, null);
-  }
-
-  public JedisSlotBasedConnectionHandler(Set<HostAndPort> nodes, GenericObjectPoolConfig poolConfig, int connectionTimeout, int soTimeout, String password) {
-    super(nodes, poolConfig, connectionTimeout, soTimeout, password);
-  }
-
-  public JedisSlotBasedConnectionHandler(Set<HostAndPort> nodes, GenericObjectPoolConfig poolConfig, int connectionTimeout, int soTimeout, String password, String clientName) {
-    super(nodes, poolConfig, connectionTimeout, soTimeout, password, clientName);
+  public JedisSlotBasedConnectionHandler(Set<HostAndPort> nodes, GenericObjectPoolConfig poolConfig, ClientOptions clientOptions) {
+    super(nodes, poolConfig, clientOptions);
   }
 
   @Override

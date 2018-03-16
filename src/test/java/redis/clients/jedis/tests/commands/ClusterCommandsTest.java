@@ -1,22 +1,19 @@
 package redis.clients.jedis.tests.commands;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
-
+import redis.clients.jedis.ClusterReset;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.ClusterReset;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.tests.HostAndPortUtil;
 import redis.clients.jedis.tests.utils.JedisClusterTestUtil;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class ClusterCommandsTest {
   private static Jedis node1;
@@ -28,11 +25,11 @@ public class ClusterCommandsTest {
   @Before
   public void setUp() throws Exception {
 
-    node1 = new Jedis(nodeInfo1);
+    node1 = new Jedis(ClientOptions.builder().withHostAndPort(nodeInfo1).build());
     node1.auth("cluster");
     node1.flushAll();
 
-    node2 = new Jedis(nodeInfo2);
+    node2 = new Jedis(ClientOptions.builder().withHostAndPort(nodeInfo2).build());
     node2.auth("cluster");
     node2.flushAll();
   }

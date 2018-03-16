@@ -1,16 +1,16 @@
 package redis.clients.jedis.tests.commands;
 
-import static org.junit.Assert.assertArrayEquals;
+import org.junit.After;
+import org.junit.Before;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.options.ClientOptions;
+import redis.clients.jedis.tests.HostAndPortUtil;
 
 import java.util.List;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.Before;
-
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.tests.HostAndPortUtil;
+import static org.junit.Assert.assertArrayEquals;
 
 public abstract class JedisCommandTestBase {
   protected static HostAndPort hnp = HostAndPortUtil.getRedisServers().get(0);
@@ -23,7 +23,7 @@ public abstract class JedisCommandTestBase {
 
   @Before
   public void setUp() throws Exception {
-    jedis = new Jedis(hnp.getHost(), hnp.getPort(), 500);
+    jedis = new Jedis(ClientOptions.builder().withHostAndPort(hnp).withTimeout(500).build());
     jedis.connect();
     jedis.auth("foobared");
     jedis.flushAll();
@@ -35,7 +35,7 @@ public abstract class JedisCommandTestBase {
   }
 
   protected Jedis createJedis() {
-    Jedis j = new Jedis(hnp);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(hnp).build());
     j.connect();
     j.auth("foobared");
     j.flushAll();

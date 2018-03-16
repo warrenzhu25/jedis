@@ -1,22 +1,19 @@
 package redis.clients.jedis.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.options.ClientOptions;
+import redis.clients.jedis.tests.utils.JedisSentinelTestUtil;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.jedis.tests.utils.JedisSentinelTestUtil;
+import static org.junit.Assert.*;
 
 public class JedisSentinelTest {
   private static final String MASTER_NAME = "mymaster";
@@ -49,7 +46,7 @@ public class JedisSentinelTest {
 
   @Test
   public void sentinel() {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
 
     try {
       List<Map<String, String>> masters = j.sentinelMasters();
@@ -79,8 +76,8 @@ public class JedisSentinelTest {
 
   @Test
   public void sentinelFailover() throws InterruptedException {
-    Jedis j = new Jedis(sentinelForFailover);
-    Jedis j2 = new Jedis(sentinelForFailover);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinelForFailover).build());
+    Jedis j2 = new Jedis(ClientOptions.builder().withHostAndPort(sentinelForFailover).build());
 
     try {
       List<String> masterHostAndPort = j.sentinelGetMasterAddrByName(FAILOVER_MASTER_NAME);
@@ -102,7 +99,7 @@ public class JedisSentinelTest {
 
   @Test
   public void sentinelMonitor() {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
 
     try {
       // monitor new master
@@ -123,7 +120,7 @@ public class JedisSentinelTest {
 
   @Test
   public void sentinelRemove() {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
 
     try {
       ensureMonitored(sentinel, REMOVE_MASTER_NAME, MASTER_IP, master.getPort(), 1);
@@ -146,7 +143,7 @@ public class JedisSentinelTest {
 
   @Test
   public void sentinelSet() {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
 
     try {
       Map<String, String> parameterMap = new HashMap<String, String>();
@@ -173,7 +170,7 @@ public class JedisSentinelTest {
 
   private void ensureMonitored(HostAndPort sentinel, String masterName, String ip, int port,
       int quorum) {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
     try {
       j.sentinelMonitor(masterName, ip, port, quorum);
     } catch (JedisDataException e) {
@@ -183,7 +180,7 @@ public class JedisSentinelTest {
   }
 
   private void ensureRemoved(String masterName) {
-    Jedis j = new Jedis(sentinel);
+    Jedis j = new Jedis(ClientOptions.builder().withHostAndPort(sentinel).build());
     try {
       j.sentinelRemove(masterName);
     } catch (JedisDataException e) {

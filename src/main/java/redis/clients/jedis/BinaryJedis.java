@@ -1,35 +1,20 @@
 package redis.clients.jedis;
 
-import static redis.clients.jedis.Protocol.toByteArray;
-
-import java.io.Closeable;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSocketFactory;
-
 import redis.clients.jedis.commands.*;
-import redis.clients.jedis.exceptions.InvalidURIException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.options.ClientOptions;
 import redis.clients.jedis.params.GeoRadiusParam;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.util.JedisByteHashMap;
-import redis.clients.jedis.util.JedisURIHelper;
+
+import java.io.Closeable;
+import java.io.Serializable;
+import java.util.*;
+
+import static redis.clients.jedis.Protocol.toByteArray;
 
 public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKeyBinaryCommands,
     AdvancedBinaryJedisCommands, BinaryScriptingCommands, Closeable {
@@ -37,141 +22,8 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
   protected Transaction transaction = null;
   protected Pipeline pipeline = null;
 
-  public BinaryJedis() {
-    client = new Client();
-  }
-
-  public BinaryJedis(final String host) {
-    URI uri = URI.create(host);
-    if (JedisURIHelper.isValid(uri)) {
-      initializeClientFromURI(uri);
-    } else {
-      client = new Client(host);
-    }
-  }
-
-  public BinaryJedis(final HostAndPort hp) {
-    this(hp.getHost(), hp.getPort());
-  }
-
-  public BinaryJedis(final String host, final int port) {
-    client = new Client(host, port);
-  }
-
-  public BinaryJedis(final String host, final int port, final boolean ssl) {
-    client = new Client(host, port, ssl);
-  }
-
-  public BinaryJedis(final String host, final int port, final boolean ssl,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
-    client = new Client(host, port, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
-  }
-
-  public BinaryJedis(final String host, final int port, final int timeout) {
-    this(host, port, timeout, timeout);
-  }
-
-  public BinaryJedis(final String host, final int port, final int timeout, final boolean ssl) {
-    this(host, port, timeout, timeout, ssl);
-  }
-
-  public BinaryJedis(final String host, final int port, final int timeout, final boolean ssl,
-      final SSLSocketFactory sslSocketFactory, final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
-    this(host, port, timeout, timeout, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
-  }
-
-  public BinaryJedis(final String host, final int port, final int connectionTimeout,
-      final int soTimeout) {
-    client = new Client(host, port);
-    client.setConnectionTimeout(connectionTimeout);
-    client.setSoTimeout(soTimeout);
-  }
-
-  public BinaryJedis(final String host, final int port, final int connectionTimeout,
-      final int soTimeout, final boolean ssl) {
-    client = new Client(host, port, ssl);
-    client.setConnectionTimeout(connectionTimeout);
-    client.setSoTimeout(soTimeout);
-  }
-
-  public BinaryJedis(final String host, final int port, final int connectionTimeout,
-      final int soTimeout, final boolean ssl, final SSLSocketFactory sslSocketFactory,
-      final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
-    client = new Client(host, port, ssl, sslSocketFactory, sslParameters, hostnameVerifier);
-    client.setConnectionTimeout(connectionTimeout);
-    client.setSoTimeout(soTimeout);
-  }
-
-  public BinaryJedis(final JedisShardInfo shardInfo) {
-    client = new Client(shardInfo.getHost(), shardInfo.getPort(), shardInfo.getSsl(),
-        shardInfo.getSslSocketFactory(), shardInfo.getSslParameters(),
-        shardInfo.getHostnameVerifier());
-    client.setConnectionTimeout(shardInfo.getConnectionTimeout());
-    client.setSoTimeout(shardInfo.getSoTimeout());
-    client.setPassword(shardInfo.getPassword());
-    client.setDb(shardInfo.getDb());
-  }
-
-  public BinaryJedis(URI uri) {
-    initializeClientFromURI(uri);
-  }
-
-  public BinaryJedis(URI uri, final SSLSocketFactory sslSocketFactory,
-      final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
-    initializeClientFromURI(uri, sslSocketFactory, sslParameters, hostnameVerifier);
-  }
-
-  public BinaryJedis(final URI uri, final int timeout) {
-    this(uri, timeout, timeout);
-  }
-
-  public BinaryJedis(final URI uri, final int timeout, final SSLSocketFactory sslSocketFactory,
-      final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
-    this(uri, timeout, timeout, sslSocketFactory, sslParameters, hostnameVerifier);
-  }
-
-  public BinaryJedis(final URI uri, final int connectionTimeout, final int soTimeout) {
-    initializeClientFromURI(uri);
-    client.setConnectionTimeout(connectionTimeout);
-    client.setSoTimeout(soTimeout);
-  }
-
-  public BinaryJedis(final URI uri, final int connectionTimeout, final int soTimeout,
-      final SSLSocketFactory sslSocketFactory,final SSLParameters sslParameters,
-      final HostnameVerifier hostnameVerifier) {
-    initializeClientFromURI(uri, sslSocketFactory, sslParameters, hostnameVerifier);
-    client.setConnectionTimeout(connectionTimeout);
-    client.setSoTimeout(soTimeout);
-  }
-
-  private void initializeClientFromURI(URI uri) {
-    initializeClientFromURI(uri, null, null, null);
-  }
-
-  private void initializeClientFromURI(URI uri, final SSLSocketFactory sslSocketFactory,
-      final SSLParameters sslParameters, final HostnameVerifier hostnameVerifier) {
-    if (!JedisURIHelper.isValid(uri)) {
-      throw new InvalidURIException(String.format(
-        "Cannot open Redis connection due invalid URI. %s", uri.toString()));
-    }
-
-    client = new Client(uri.getHost(), uri.getPort(), JedisURIHelper.isRedisSSLScheme(uri),
-      sslSocketFactory, sslParameters, hostnameVerifier);
-
-    String password = JedisURIHelper.getPassword(uri);
-    if (password != null) {
-      client.auth(password);
-      client.getStatusCodeReply();
-    }
-
-    int dbIndex = JedisURIHelper.getDBIndex(uri);
-    if (dbIndex > 0) {
-      client.select(dbIndex);
-      client.getStatusCodeReply();
-      client.setDb(dbIndex);
-    }
+  public BinaryJedis(ClientOptions clientOptions) {
+    this.client = new Client(clientOptions);
   }
 
   @Override
